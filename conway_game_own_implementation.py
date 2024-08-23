@@ -1,5 +1,13 @@
 import numpy as np
 import tkinter as tk
+from functools import partial
+
+possibilities_of_colors = {
+    "black-white" : {1: "black", 0: "white"},
+    "white-black" : {1: "white", 0: "black"},
+    "red-black" : {1: "red", 0: "black"},
+    "green-red" : {1: "green", 0: "red"}
+}
 
 
 class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
@@ -22,6 +30,14 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
                 self.set_color(j-1, i-1, self.lifecolor[0])
 
         self.state = False #bardzo specyficzny atrybut. Kontroluje on przebieg symulacji gry. Jeśli jego wartość wynosi FALSE, obliczenia nie są dokonywane i symulacja nie zachodzi
+
+    def set_lifecolor_dict(self, colors):
+        self.lifecolor = possibilities_of_colors[colors]
+        self.canva.delete("all")
+        for i in range(1, self.zycie.shape[0]-1):#w tejże pętli ustalamy dla każdej komórki jej stan i rysujemy odpowiednim kolorem
+            for j in range(1, self.zycie.shape[1]-1):
+                self.set_color(j-1, i-1, self.lifecolor.get(self.zycie[i][j])) #rysujemy komórkę odpowiednim dla niej kolorem
+
 
 
     def set_color(self, a1, b1, color): #funkcja malująca odpowiednie komórki na właściwy jej kolor
@@ -117,6 +133,19 @@ class Window: #tu tworzę klasę okno
         self.window.geometry(f'{size_a}x{round(size_b)}') #definiuję rozmiar
         self.canvas = tk.Canvas(self.window, width=size_a, height=round(size_b)*2.5/3, bg='white') #tworzę kanwę tak, aby na dole było jeszcze miejsce na wstawienie przycisków
         self.canvas.pack() #umieszczam kanwę w oknie
+        # menu = tk.Menu(self.window)
+        # self.window.config(menu = menu)
+        # colormenu = tk.Menu(menu)
+
+        # for i in possibilities_of_colors.keys():
+        #     print(i)
+        #     act = partial(cells.set_lifecolor_dict, i)
+        #     colormenu.add_command(label=i, command=act)
+        # menu.add_cascade(label="Cell colors", menu=colormenu)
+
+
+
+
 
 #definiujemy wymiary kanwy(!) i oba wymiary naraz (za pomocą jednej zmiennej) determinujące liczbę komórek w rzędzie i kolumnie
 width = 800
@@ -132,4 +161,13 @@ choosestet = tk.Button(window.window, text = 'Wybierz komórki startowe', comman
 choosestet.place(x = width*2/5, y = height*3/2.8)#ustalenie pozycji przycisku
 stopsim = tk.Button(window.window, text = 'Zakończ symulacje', command=cells.stop)#przycisk kończenia symulacji
 stopsim.place(x = width*2/3, y = height*3/2.8)#ustalenie pozycji przycisku
+menu = tk.Menu(window.window)
+window.window.config(menu = menu)
+colormenu = tk.Menu(menu)
+
+for i in possibilities_of_colors.keys():
+    act = partial(cells.set_lifecolor_dict, i)
+    colormenu.add_command(label=i, command=act)
+menu.add_cascade(label="Cell colors", menu=colormenu)
+
 window.window.mainloop()#rozpoczęcie działania okna
