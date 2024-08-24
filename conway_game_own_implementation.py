@@ -15,6 +15,8 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
     lifecolor = {1: "black", 0: "white"} #słownik życia - jeśli element macierzy (która niedługo powstanie)
     # ma wartość 1, komórka jej odpowiadająca na płótnie (kanwie) okna jest żywa i przyjmuje kolor czarny. W przeciwnym
     #wypadku przyjmuje kolor biały i jest martwa
+    lifedict2 = {0: {0: 0, 1: 0, 2: 0, 3: 1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0},
+                 1: {0: 0, 1: 0, 2: 1, 3: 1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}}
 
     def __init__(self, a, b, size_a, size_b): #konstruktor klasy, za argumenty przyjmuje liczbę komórek na płótnie poziomo odjąć dwa,
         #liczbę komórek na płotnie pionowo odjąć dwa (razem komórek: (a-2) * (b-2)) oraz kanwę, na której rysujemy komórki
@@ -22,21 +24,10 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
         self.a = a
         self.b = b
         self.window = tk.Tk() #włąściwe okno
-        # Remove the default title bar
-
         self.window.title("Somsiedzka gra w życie Conwaya")
-
         self.window.geometry(f'{size_a}x{round(size_b)}') #definiuję rozmiar
         self.canva = tk.Canvas(self.window, width=size_a, height=round(size_b)*2.5/3, bg='white') #tworzę kanwę tak, aby na dole było jeszcze miejsce na wstawienie przycisków
         self.canva.pack()
-
-        #print(size_a/1.1)
-
-        # #startsim.pack(side='bottom')
-        # choosestet = tk.Button(self.window, text = 'Wybierz komórki startowe', command=self.start_choice_phase)#przycisk wyboru komórek startowych
-        # choosestet.place(x = size_a*2/5, y = size_b*3/2.8)#ustalenie pozycji przycisku
-        # stopsim = tk.Button(self.window, text = 'Zakończ symulacje', command=self.stop)#przycisk kończenia symulacji
-        # stopsim.place(x = size_a*2/3, y = size_b*3/2.8)#ustalenie pozycji przycisku
 
         menu = tk.Menu(self.window)
         self.window.config(menu = menu)
@@ -66,6 +57,11 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
             for j in range(1, self.zycie.shape[1]-1):
                 self.set_color(j-1, i-1, self.lifecolor.get(self.zycie[i][j])) #rysujemy komórkę odpowiednim dla niej kolorem
 
+    def update_all(self):
+        self.canva.delete("all")
+        for i in range(1, self.zycie.shape[0]-1):#w tejże pętli ustalamy dla każdej komórki jej stan i rysujemy odpowiednim kolorem
+            for j in range(1, self.zycie.shape[1]-1):
+                self.set_color(j-1, i-1, self.lifecolor.get(self.zycie[i][j])) #rysujemy komórkę odpowiednim dla niej kolorem
 
 
     def set_color(self, a1, b1, color): #funkcja malująca odpowiednie komórki na właściwy jej kolor
@@ -84,10 +80,9 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
         self.choice()
 
     def set_random_config(self):
-        x = np.random.randint(2, size = (self.a, self.b), dtype=int) #tu tworzymy macierz komórek
+        x = np.random.randint(2, size = (self.a-2, self.b-2), dtype=int) #tu tworzymy macierz komórek
 
-        self.zycie = x #macierz przypisujemy jako argument instancji
-        #print(self.zycie) #tu sprawdzałem, czy rzeczywiście stworzyła się początkowa macierz zerowa
+        self.zycie[1:self.zycie.shape[0] - 1, 1:self.zycie.shape[1] - 1] = x #macierz przypisujemy jako argument instancji
         self.canva.delete("all")
         for i in range(1, self.zycie.shape[0]-1):#w tejże pętli ustalamy dla każdej komórki jej stan i rysujemy odpowiednim kolorem
             for j in range(1, self.zycie.shape[1]-1):
@@ -152,13 +147,13 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
             self.canva.bind("<Button-1>", '') #przypisujemy lewy przycisk myszy do zdarzenia pustego - gdy klikniemy na kanwę, nic się nie stanie
             neigh = self.neighbours() #tworzymy macierz liczby sąsiadów danej komórki za pomocą wcześniej zdefiniowanej metody
             self.canva.delete("all") #usuwamy dotychczasową zawartosć kanwy
-            lifedict2 = {0: {0: 0, 1: 0, 2: 0, 3: 1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0},
-                         1: {0: 0, 1: 0, 2: 1, 3: 1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}} #jest to słownik, którego wartości również są słownikiem;
+            # lifedict2 = {0: {0: 0, 1: 0, 2: 0, 3: 1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0},
+            #              1: {0: 0, 1: 0, 2: 1, 3: 1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}} #jest to słownik, którego wartości również są słownikiem;
             #klucze słownika głównego odnoszą się do obecnego stanu komórki, zaś klucze zagnieżdżonych słowników to liczby sąsiadów, a wartości im przypisane to stan komórki w kolejnej iteracji
 
             for i in range(1, self.zycie.shape[0] - 1):#w tejże pętli ustalamy dla każdej komórki jej stan i rysujemy odpowiednim kolorem
                 for j in range(1, self.zycie.shape[1] - 1):
-                    self.zycie[i][j] = lifedict2[self.zycie[i][j]].get(neigh[i][j]) #pobieramy wartość stanu komórki w przyszłej iteracji za pomocą podwójnego pobierania
+                    self.zycie[i][j] = self.lifedict2[self.zycie[i][j]].get(neigh[i][j]) #pobieramy wartość stanu komórki w przyszłej iteracji za pomocą podwójnego pobierania
                     #wartości ze słownika - najpierw pobieramy słownik odpowiadający stanowi obecnemu komórki, a nastepnie z pomocą macierzy liczby sasiadow wybieramy stan odpowiadajacy liczbe sasiadow danej komorki
                     self.set_color( j - 1, i - 1, self.lifecolor.get(self.zycie[i][j])) #rysujemy komórkę odpowiednim dla niej kolorem
 
@@ -188,7 +183,7 @@ class Window: #tu tworzę klasę okno
 #definiujemy wymiary kanwy(!) i oba wymiary naraz (za pomocą jednej zmiennej) determinujące liczbę komórek w rzędzie i kolumnie
 width = 800
 height = 800
-cells_number = 60
+cells_number = 12
 
 #tworzymy okno
 #window = Window(width, height*3/2.5)
