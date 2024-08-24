@@ -16,18 +16,46 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
     # ma wartość 1, komórka jej odpowiadająca na płótnie (kanwie) okna jest żywa i przyjmuje kolor czarny. W przeciwnym
     #wypadku przyjmuje kolor biały i jest martwa
 
-    def __init__(self, a, b, canva): #konstruktor klasy, za argumenty przyjmuje liczbę komórek na płótnie poziomo odjąć dwa,
+    def __init__(self, a, b, size_a, size_b): #konstruktor klasy, za argumenty przyjmuje liczbę komórek na płótnie poziomo odjąć dwa,
         #liczbę komórek na płotnie pionowo odjąć dwa (razem komórek: (a-2) * (b-2)) oraz kanwę, na której rysujemy komórki
         #Powód dla któego liczba komórek jest właśnie taka podam w poniższych linijkach - znacznie to ułatwia obliczenia, gdyż zera stanowiace zewnętrzną barierę macierzy posłużą jako "granica z niczym"
-        self.canva = canva
-        x = np.zeros((a, b), dtype=int) #tu tworzymy macierz komórek
+        self.a = a
+        self.b = b
+        self.window = tk.Tk() #włąściwe okno
+        # Remove the default title bar
+
+        self.window.title("Somsiedzka gra w życie Conwaya")
+
+        self.window.geometry(f'{size_a}x{round(size_b)}') #definiuję rozmiar
+        self.canva = tk.Canvas(self.window, width=size_a, height=round(size_b)*2.5/3, bg='white') #tworzę kanwę tak, aby na dole było jeszcze miejsce na wstawienie przycisków
+        self.canva.pack()
+
+        #print(size_a/1.1)
+
+        # #startsim.pack(side='bottom')
+        # choosestet = tk.Button(self.window, text = 'Wybierz komórki startowe', command=self.start_choice_phase)#przycisk wyboru komórek startowych
+        # choosestet.place(x = size_a*2/5, y = size_b*3/2.8)#ustalenie pozycji przycisku
+        # stopsim = tk.Button(self.window, text = 'Zakończ symulacje', command=self.stop)#przycisk kończenia symulacji
+        # stopsim.place(x = size_a*2/3, y = size_b*3/2.8)#ustalenie pozycji przycisku
+
+        menu = tk.Menu(self.window)
+        self.window.config(menu = menu)
+        colormenu = tk.Menu(menu)
+
+        for i in possibilities_of_colors.keys():
+            act = partial(self.set_lifecolor_dict, i)
+            colormenu.add_command(label=i, command=act)
+        menu.add_cascade(label="Cell colors", menu=colormenu)
+
+        x = np.zeros((self.a, self.b), dtype=int) #tu tworzymy macierz komórek
 
         self.zycie = x #macierz przypisujemy jako argument instancji
-        print(self.zycie) #tu sprawdzałem, czy rzeczywiście stworzyła się początkowa macierz zerowa
+        #print(self.zycie) #tu sprawdzałem, czy rzeczywiście stworzyła się początkowa macierz zerowa
 
         for i in range(1, self.zycie.shape[0]-1): #w ramach tej pętli kolorują się komórki w odpowiadającym kolorze za pomocą metody set_color, zdefiniowanej w kolejnych liniach programu
             for j in range(1, self.zycie.shape[1]-1):
                 self.set_color(j-1, i-1, self.lifecolor[0])
+ 
 
         self.state = False #bardzo specyficzny atrybut. Kontroluje on przebieg symulacji gry. Jeśli jego wartość wynosi FALSE, obliczenia nie są dokonywane i symulacja nie zachodzi
 
@@ -48,12 +76,22 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
                                     int(self.canva.cget('height')) / (self.zycie.shape[0] - 2) * b1,
                                     int(self.canva.cget('width')) / (self.zycie.shape[1] - 2) * (a1 + 1),
                                     int(self.canva.cget('height')) / (self.zycie.shape[0] - 2) * (b1 + 1),
-                                    fill = color) #funkcja create_rectangle to funkcja rysująca prostokąt o zadeklarowanych współrzędnych i pomalowany w odpowiednim kolorze
+                                    fill = color, outline = self.lifecolor[1]) #funkcja create_rectangle to funkcja rysująca prostokąt o zadeklarowanych współrzędnych i pomalowany w odpowiednim kolorze
 
     def start_choice_phase(self):
         #funkcja aktualizująca stan symulacji z jakiegokolwiek stanu do stanu uśpienia symulacji i prowadząca do funkcji umożliwiającej wybór komórek początkowych symulacji
         self.state = False
         self.choice()
+
+    def set_random_config(self):
+        x = np.random.randint(2, size = (self.a, self.b), dtype=int) #tu tworzymy macierz komórek
+
+        self.zycie = x #macierz przypisujemy jako argument instancji
+        #print(self.zycie) #tu sprawdzałem, czy rzeczywiście stworzyła się początkowa macierz zerowa
+        self.canva.delete("all")
+        for i in range(1, self.zycie.shape[0]-1):#w tejże pętli ustalamy dla każdej komórki jej stan i rysujemy odpowiednim kolorem
+            for j in range(1, self.zycie.shape[1]-1):
+                self.set_color(j-1, i-1, self.lifecolor.get(self.zycie[i][j])) #rysujemy komórkę odpowiednim dla niej kolorem
 
     def set_cell(self, event):
         #jest to najtrudniejsza funkcja w objaśnieniu, głównie ze względu na charakter obliczeń. W pierwszej kolejności
@@ -153,21 +191,23 @@ height = 800
 cells_number = 60
 
 #tworzymy okno
-window = Window(width, height*3/2.5)
-cells = Cells(cells_number + 2, cells_number + 2, window.canvas)#tworzymy przestrzeń życiową komórek
-startsim = tk.Button(window.window, text = 'Zacznij symulację', command=cells.start)#przycisk, który rozpocyzna symulację
-startsim.place(x = width /6, y = height*3/2.8)#ustalenie pozycji przycisku
-choosestet = tk.Button(window.window, text = 'Wybierz komórki startowe', command=cells.start_choice_phase)#przycisk wyboru komórek startowych
-choosestet.place(x = width*2/5, y = height*3/2.8)#ustalenie pozycji przycisku
-stopsim = tk.Button(window.window, text = 'Zakończ symulacje', command=cells.stop)#przycisk kończenia symulacji
-stopsim.place(x = width*2/3, y = height*3/2.8)#ustalenie pozycji przycisku
-menu = tk.Menu(window.window)
-window.window.config(menu = menu)
-colormenu = tk.Menu(menu)
+#window = Window(width, height*3/2.5)
+cells = Cells(cells_number + 2, cells_number + 2, width, height*3/2.5)#tworzymy przestrzeń życiową komórek
+startsim = tk.Button(cells.window, text = 'Zacznij symulację', command=cells.start)#przycisk, który rozpocyzna symulację
+startsim.place(x = width/7, y = height*3/2.8)#ustalenie pozycji przycisku
+choosestet = tk.Button(cells.window, text = 'Wybierz komórki startowe', command=cells.start_choice_phase)#przycisk wyboru komórek startowych
+choosestet.place(x = width*1.8/5, y = height*3/2.8)#ustalenie pozycji przycisku
+stopsim = tk.Button(cells.window, text = 'Zakończ symulacje', command=cells.stop)#przycisk kończenia symulacji
+stopsim.place(x = width*1.8/3, y = height*3/2.8)#ustalenie pozycji przycisku
+random_sel = tk.Button(cells.window, text = "Losowe ustawienie", command = cells.set_random_config)
+random_sel.place(x = width*4/5, y = height*3/2.8)
+# menu = tk.Menu(window.window)
+# window.window.config(menu = menu)
+# colormenu = tk.Menu(menu)
 
-for i in possibilities_of_colors.keys():
-    act = partial(cells.set_lifecolor_dict, i)
-    colormenu.add_command(label=i, command=act)
-menu.add_cascade(label="Cell colors", menu=colormenu)
+# for i in possibilities_of_colors.keys():
+#     act = partial(cells.set_lifecolor_dict, i)
+#     colormenu.add_command(label=i, command=act)
+# menu.add_cascade(label="Cell colors", menu=colormenu)
 
-window.window.mainloop()#rozpoczęcie działania okna
+cells.window.mainloop()#rozpoczęcie działania okna
