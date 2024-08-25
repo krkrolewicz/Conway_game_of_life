@@ -6,13 +6,14 @@ possibilities_of_colors = {
     "black-white" : {1: "black", 0: "white"},
     "white-black" : {1: "white", 0: "black"},
     "red-black" : {1: "red", 0: "black"},
-    "green-red" : {1: "green", 0: "red"}
+    "green-red" : {1: "green", 0: "red"},
+    "purple-yellow" : {1:"purple", 0:"yellow"}
 }
 
 
 class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
 
-    lifecolor = {1: "black", 0: "white"} #słownik życia - jeśli element macierzy (która niedługo powstanie)
+    lifecolor = possibilities_of_colors["black-white"]#słownik życia - jeśli element macierzy (która niedługo powstanie)
     # ma wartość 1, komórka jej odpowiadająca na płótnie (kanwie) okna jest żywa i przyjmuje kolor czarny. W przeciwnym
     #wypadku przyjmuje kolor biały i jest martwa
     lifedict2 = {0: {0: 0, 1: 0, 2: 0, 3: 1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0},
@@ -39,13 +40,8 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
         menu.add_cascade(label="Cell colors", menu=colormenu)
 
         x = np.zeros((self.a, self.b), dtype=int) #tu tworzymy macierz komórek
-
         self.zycie = x #macierz przypisujemy jako argument instancji
-        #print(self.zycie) #tu sprawdzałem, czy rzeczywiście stworzyła się początkowa macierz zerowa
-
-        for i in range(1, self.zycie.shape[0]-1): #w ramach tej pętli kolorują się komórki w odpowiadającym kolorze za pomocą metody set_color, zdefiniowanej w kolejnych liniach programu
-            for j in range(1, self.zycie.shape[1]-1):
-                self.set_color(j-1, i-1, self.lifecolor[0])
+        self.update_all()
  
 
         self.state = False #bardzo specyficzny atrybut. Kontroluje on przebieg symulacji gry. Jeśli jego wartość wynosi FALSE, obliczenia nie są dokonywane i symulacja nie zachodzi
@@ -53,14 +49,16 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
     def set_lifecolor_dict(self, colors):
         self.lifecolor = possibilities_of_colors[colors]
         self.canva.delete("all")
-        for i in range(1, self.zycie.shape[0]-1):#w tejże pętli ustalamy dla każdej komórki jej stan i rysujemy odpowiednim kolorem
-            for j in range(1, self.zycie.shape[1]-1):
-                self.set_color(j-1, i-1, self.lifecolor.get(self.zycie[i][j])) #rysujemy komórkę odpowiednim dla niej kolorem
+        self.update_all()
 
-    def update_all(self):
+    def update_all(self, advanced = False):
         self.canva.delete("all")
+        if advanced == True:
+            neigh = self.neighbours()
         for i in range(1, self.zycie.shape[0]-1):#w tejże pętli ustalamy dla każdej komórki jej stan i rysujemy odpowiednim kolorem
             for j in range(1, self.zycie.shape[1]-1):
+                if advanced == True:
+                    self.zycie[i][j] = self.lifedict2[self.zycie[i][j]].get(neigh[i][j])
                 self.set_color(j-1, i-1, self.lifecolor.get(self.zycie[i][j])) #rysujemy komórkę odpowiednim dla niej kolorem
 
 
@@ -81,12 +79,8 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
 
     def set_random_config(self):
         x = np.random.randint(2, size = (self.a-2, self.b-2), dtype=int) #tu tworzymy macierz komórek
-
         self.zycie[1:self.zycie.shape[0] - 1, 1:self.zycie.shape[1] - 1] = x #macierz przypisujemy jako argument instancji
-        self.canva.delete("all")
-        for i in range(1, self.zycie.shape[0]-1):#w tejże pętli ustalamy dla każdej komórki jej stan i rysujemy odpowiednim kolorem
-            for j in range(1, self.zycie.shape[1]-1):
-                self.set_color(j-1, i-1, self.lifecolor.get(self.zycie[i][j])) #rysujemy komórkę odpowiednim dla niej kolorem
+        self.update_all()
 
     def set_cell(self, event):
         #jest to najtrudniejsza funkcja w objaśnieniu, głównie ze względu na charakter obliczeń. W pierwszej kolejności
@@ -117,7 +111,6 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
 
     def choice(self):
         #funkcja ta przypisuje klawisz myszki lewy do funkcji set_cell, wykonującą się gdy kliknięty zostanie element kanwy
-
         self.canva.bind("<Button-1>", self.set_cell)
 
     def neighbours(self):
@@ -134,7 +127,6 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
     def start(self):
         #funkcja zmieniająca stan symulacji na True i kierująca do funkcji kalkulującej kolejne stany przestrzeni życiowej
         self.state = True
-
         self.change()
 
     def stop(self):
@@ -145,45 +137,35 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
         #funkcja zmieniajaca stan przestrzeni życiowej - tzn aktualizująca stan komórek w zależności od liczby sąsiadów
         if self.state is True: #funkcja zajdzie tylko, gdy stan symulacji jest ustawiony na True
             self.canva.bind("<Button-1>", '') #przypisujemy lewy przycisk myszy do zdarzenia pustego - gdy klikniemy na kanwę, nic się nie stanie
-            neigh = self.neighbours() #tworzymy macierz liczby sąsiadów danej komórki za pomocą wcześniej zdefiniowanej metody
-            self.canva.delete("all") #usuwamy dotychczasową zawartosć kanwy
-            # lifedict2 = {0: {0: 0, 1: 0, 2: 0, 3: 1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0},
-            #              1: {0: 0, 1: 0, 2: 1, 3: 1, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}} #jest to słownik, którego wartości również są słownikiem;
-            #klucze słownika głównego odnoszą się do obecnego stanu komórki, zaś klucze zagnieżdżonych słowników to liczby sąsiadów, a wartości im przypisane to stan komórki w kolejnej iteracji
+            #neigh = self.neighbours() #tworzymy macierz liczby sąsiadów danej komórki za pomocą wcześniej zdefiniowanej metody
 
-            for i in range(1, self.zycie.shape[0] - 1):#w tejże pętli ustalamy dla każdej komórki jej stan i rysujemy odpowiednim kolorem
-                for j in range(1, self.zycie.shape[1] - 1):
-                    self.zycie[i][j] = self.lifedict2[self.zycie[i][j]].get(neigh[i][j]) #pobieramy wartość stanu komórki w przyszłej iteracji za pomocą podwójnego pobierania
-                    #wartości ze słownika - najpierw pobieramy słownik odpowiadający stanowi obecnemu komórki, a nastepnie z pomocą macierzy liczby sasiadow wybieramy stan odpowiadajacy liczbe sasiadow danej komorki
-                    self.set_color( j - 1, i - 1, self.lifecolor.get(self.zycie[i][j])) #rysujemy komórkę odpowiednim dla niej kolorem
+            #klucze słownika głównego odnoszą się do obecnego stanu komórki, zaś klucze zagnieżdżonych słowników to liczby sąsiadów, a wartości im przypisane to stan komórki w kolejnej iteracji
+            self.update_all(advanced=True)
+            # for i in range(1, self.zycie.shape[0] - 1):#w tejże pętli ustalamy dla każdej komórki jej stan i rysujemy odpowiednim kolorem
+            #     for j in range(1, self.zycie.shape[1] - 1):
+            #         self.zycie[i][j] = self.lifedict2[self.zycie[i][j]].get(neigh[i][j]) #pobieramy wartość stanu komórki w przyszłej iteracji za pomocą podwójnego pobierania
+            #         #wartości ze słownika - najpierw pobieramy słownik odpowiadający stanowi obecnemu komórki, a nastepnie z pomocą macierzy liczby sasiadow wybieramy stan odpowiadajacy liczbe sasiadow danej komorki
+            #         self.set_color( j - 1, i - 1, self.lifecolor.get(self.zycie[i][j])) #rysujemy komórkę odpowiednim dla niej kolorem
 
             self.canva.after(1000, self.change) #po chwili przerwy przechodzimy ponownie do tej samej funkcji
 
 
-class Window: #tu tworzę klasę okno
-    def __init__(self, size_a, size_b): #konstruktor pobiera informacje o szerokości i wysokości okna
-        self.window = tk.Tk() #włąściwe okno
-        self.window.geometry(f'{size_a}x{round(size_b)}') #definiuję rozmiar
-        self.canvas = tk.Canvas(self.window, width=size_a, height=round(size_b)*2.5/3, bg='white') #tworzę kanwę tak, aby na dole było jeszcze miejsce na wstawienie przycisków
-        self.canvas.pack() #umieszczam kanwę w oknie
-        # menu = tk.Menu(self.window)
-        # self.window.config(menu = menu)
-        # colormenu = tk.Menu(menu)
-
-        # for i in possibilities_of_colors.keys():
-        #     print(i)
-        #     act = partial(cells.set_lifecolor_dict, i)
-        #     colormenu.add_command(label=i, command=act)
-        # menu.add_cascade(label="Cell colors", menu=colormenu)
-
-
+# class Window: #tu tworzę klasę okno
+#     def __init__(self, size_a, size_b): #konstruktor pobiera informacje o szerokości i wysokości okna
+#         self.window = tk.Tk() #włąściwe okno
+#         self.window.geometry(f'{size_a}x{round(size_b)}') #definiuję rozmiar
+#         self.canvas = tk.Canvas(self.window, width=size_a, height=round(size_b)*2.5/3, bg='white') #tworzę kanwę tak, aby na dole było jeszcze miejsce na wstawienie przycisków
+#         self.canvas.pack() #umieszczam kanwę w oknie
+#         # menu = tk.Menu(self.window)
+#         # self.window.config(menu = menu)
+#         # colormenu = tk.Menu(menu)
 
 
 
 #definiujemy wymiary kanwy(!) i oba wymiary naraz (za pomocą jednej zmiennej) determinujące liczbę komórek w rzędzie i kolumnie
 width = 800
 height = 800
-cells_number = 12
+cells_number = 30
 
 #tworzymy okno
 #window = Window(width, height*3/2.5)
@@ -196,13 +178,6 @@ stopsim = tk.Button(cells.window, text = 'Zakończ symulacje', command=cells.sto
 stopsim.place(x = width*1.8/3, y = height*3/2.8)#ustalenie pozycji przycisku
 random_sel = tk.Button(cells.window, text = "Losowe ustawienie", command = cells.set_random_config)
 random_sel.place(x = width*4/5, y = height*3/2.8)
-# menu = tk.Menu(window.window)
-# window.window.config(menu = menu)
-# colormenu = tk.Menu(menu)
 
-# for i in possibilities_of_colors.keys():
-#     act = partial(cells.set_lifecolor_dict, i)
-#     colormenu.add_command(label=i, command=act)
-# menu.add_cascade(label="Cell colors", menu=colormenu)
 
 cells.window.mainloop()#rozpoczęcie działania okna
