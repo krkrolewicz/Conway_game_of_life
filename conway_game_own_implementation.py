@@ -30,6 +30,10 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
         self.canva = tk.Canvas(self.window, width=size_a, height=round(size_b)*2.5/3, bg='white') #tworzę kanwę tak, aby na dole było jeszcze miejsce na wstawienie przycisków
         self.canva.pack()
 
+        self.scaler = None
+
+        self.random_fraction = 0.25
+
         menu = tk.Menu(self.window)
         self.window.config(menu = menu)
         colormenu = tk.Menu(menu)
@@ -42,14 +46,15 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
         x = np.zeros((self.a, self.b), dtype=int) #tu tworzymy macierz komórek
         self.zycie = x #macierz przypisujemy jako argument instancji
         self.update_all()
- 
-
         self.state = False #bardzo specyficzny atrybut. Kontroluje on przebieg symulacji gry. Jeśli jego wartość wynosi FALSE, obliczenia nie są dokonywane i symulacja nie zachodzi
 
     def set_lifecolor_dict(self, colors):
         self.lifecolor = possibilities_of_colors[colors]
         self.canva.delete("all")
         self.update_all()
+
+    def set_new_random_fraction(self, argument):
+        self.random_fraction = float(argument)
 
     def update_all(self, advanced = False):
         self.canva.delete("all")
@@ -78,7 +83,7 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
         self.choice()
 
     def set_random_config(self):
-        x = np.random.randint(2, size = (self.a-2, self.b-2), dtype=int) #tu tworzymy macierz komórek
+        x = np.random.choice([1,0], size = (self.a-2, self.b-2), p=[self.random_fraction, 1 - self.random_fraction]) #tu tworzymy macierz komórek
         self.zycie[1:self.zycie.shape[0] - 1, 1:self.zycie.shape[1] - 1] = x #macierz przypisujemy jako argument instancji
         self.update_all()
 
@@ -165,19 +170,24 @@ class Cells: #klasa, w której tworzymy przestrzeń życiową komórek
 #definiujemy wymiary kanwy(!) i oba wymiary naraz (za pomocą jednej zmiennej) determinujące liczbę komórek w rzędzie i kolumnie
 width = 800
 height = 800
-cells_number = 30
+cells_number = 40
 
 #tworzymy okno
 #window = Window(width, height*3/2.5)
 cells = Cells(cells_number + 2, cells_number + 2, width, height*3/2.5)#tworzymy przestrzeń życiową komórek
 startsim = tk.Button(cells.window, text = 'Zacznij symulację', command=cells.start)#przycisk, który rozpocyzna symulację
-startsim.place(x = width/7, y = height*3/2.8)#ustalenie pozycji przycisku
+startsim.place(x = width*0.5/7, y = height*3/2.8)#ustalenie pozycji przycisku
 choosestet = tk.Button(cells.window, text = 'Wybierz komórki startowe', command=cells.start_choice_phase)#przycisk wyboru komórek startowych
-choosestet.place(x = width*1.8/5, y = height*3/2.8)#ustalenie pozycji przycisku
+choosestet.place(x = width*1.6/7, y = height*3/2.8)#ustalenie pozycji przycisku
 stopsim = tk.Button(cells.window, text = 'Zakończ symulacje', command=cells.stop)#przycisk kończenia symulacji
-stopsim.place(x = width*1.8/3, y = height*3/2.8)#ustalenie pozycji przycisku
+stopsim.place(x = width*3/7, y = height*3/2.8)#ustalenie pozycji przycisku
 random_sel = tk.Button(cells.window, text = "Losowe ustawienie", command = cells.set_random_config)
-random_sel.place(x = width*4/5, y = height*3/2.8)
+random_sel.place(x = width*4.2/7, y = height*3/2.8)
+cells.scaler = tk.Scale(cells.window, from_= 0, to=1, resolution=0.01, orient="horizontal", command=cells.set_new_random_fraction)
+cells.scaler.set(0.25)
+cells.scaler.place(x = width*5.5/7, y = height*2.95/2.8)
+label = tk.Label(cells.window, text="Ułamek żywych komórek\n w losowym ustawieniu:")
+label.place(x = width*5.35/7, y = height*2.85/2.8)
 
 
 cells.window.mainloop()#rozpoczęcie działania okna
